@@ -1,8 +1,11 @@
+library(dplyr)
+
 
 data <- read.table("./Data/qog_eureg_long_nov20.csv", sep = ",", header = TRUE)
 data <- data[!is.na(data$eqi_score),]
 
-
+data[,"year"]
+data[,"region_name"]
 data[,"eu_d2jan_t"] #pop
 data[,"eu_d3area_lat"] #surface
 data[,"eu_d3area_t"] #surface
@@ -15,5 +18,23 @@ data[,"eqi_norm_corrupt"] #corruption normalisé
 data[,"eu_tour_nshotel"] #nuits passees dans hotel ou autre
 data[,"eu_rac_kil"] #victimes accidents de la route
 
-data <- data[,c("eqi_norm_eqi", "eu_d2jan_t", "eu_d3area_t", "eu_b5n_eur_hab", "eu_empl_edltotal",
+data <- data[,c("region_name", "year", "eqi_norm_eqi", "eu_d2jan_t", "eu_d3area_t", "eu_b5n_eur_hab", "eu_empl_edltotal",
                 "eu_hea_mdoc", "eqi_norm_corrupt", "eu_tour_nshotel", "eu_rac_kil")]
+nrow(data)
+summary(data)
+
+df <- data[,c("region_name", "year", "eu_d3area_t")]
+df <- df %>% filter(year == 2013)
+df["year"] <- 2017
+
+data <- data %>% left_join(df, 
+           by=c('region_name'))
+
+data <- data %>% select(region_name,year.x,eqi_norm_eqi,eu_d2jan_t,eu_d3area_t.y,eu_b5n_eur_hab,
+                        eu_empl_edltotal,eu_hea_mdoc,eqi_norm_corrupt,eu_tour_nshotel,eu_rac_kil)
+
+
+sum(is.na(data$eu_d3area_t.y))
+
+#data %>% filter(!is.na(data$eu_d3area_t.y))
+
