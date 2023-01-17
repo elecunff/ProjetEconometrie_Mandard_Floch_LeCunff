@@ -1,7 +1,5 @@
 
-setwd("~/Fac/M2/Econométrie/Projet")
-
-data <- read.table("qog_eureg_long_nov20.csv", sep = ",", header = TRUE)
+data <- read.table("./Data/qog_eureg_long_nov20.csv", sep = ",", header = TRUE)
 data <- data[!is.na(data$eqi_score),]
 
 
