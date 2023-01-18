@@ -1,8 +1,22 @@
+---
+title: "Projet économétrie des panels"
+author: "Le Cunff Ewen - Elisa Floch - Mandard Maël"
+date: "Février 2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 
 library(dplyr)
 library(nlme)
 library(corrplot)
+```
 
+
+```{r, include = FALSE}
+
+getwd()
 
 data <- read.table("./Data/qog_eureg_long_nov20.csv", sep = ",", header = TRUE)
 data <- data[!is.na(data$eqi_score),]
@@ -23,7 +37,7 @@ data <- data[!is.na(data$eqi_score),]
 
 #selection des variables
 #variable à expliquer : eqi_norm
-data <- data[,c("cname", "region_name", "year", "eqi_norm_eqi", "eu_d2jan_t", "eu_d3area_t", "eu_b5n_eur_hab", "eu_empl_edltotal",
+data <- data[,c("cname", "region_name", "year", "eqi_norm_eqi", "eu_d2jan_t", "eu_d3area_t", "eu_b5n_eur_hab","eu_empl_edltotal",
                 "eu_hea_mdoc", "eqi_norm_corrupt", "eu_tour_nshotel", "eu_rac_kil")]
 
 nrow(data)
@@ -74,23 +88,38 @@ summary(data)
 colnames(data) <- c("region", "annee", "EQI_norm", "pop", "surface", "revenu", "emploi", "corr_norm",
                     "hotel", "meurtre")
 
+```
 
-###################
-#statistiques descriptives
-###################
+# **Introduction**
+</br>
 
+
+# **1) Statistiques descriptives**
+</br>
+
+```{r}
 #on a 151 regions avec 3 observations par région
 
 plot(data$annee,data$EQI_norm,xlab = "Année",ylab = "EQI normalisé", main = "EQI normalisé par année")
+```
 
+
+```{r}
 data_ind <- groupedData(EQI_norm ~ annee|region, data,   outer = ~ region)
 plot(data_ind, main = "EQI normalisé par année et par région")
+```
 
+```{r}
 boxplot(data$EQI_norm,las=1, names = c("EQI normalisé"), col = c( "red"), main = "Distribution de l'EQI normalisé")
+```
 
 
+
+```{r}
 matrixcorr<- data[,-c(1,2)]
 mcor<-cor(matrixcorr)
 
 #matrice des correlations
 corrplot(mcor,type='upper', title = "Matrice des corrélations", mar=c(0,0,1,0))
+```
+
