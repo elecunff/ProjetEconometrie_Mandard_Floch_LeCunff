@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(nlme)
 library(corrplot)
+library(plm)
 ```
 
 
@@ -18,7 +19,7 @@ library(corrplot)
 
 getwd()
 
-data <- read.table("./Data/qog_eureg_long_nov20.csv", sep = ",", header = TRUE)
+#data <- read.table("./Data/qog_eureg_long_nov20.csv", sep = ",", header = TRUE)
 data <- data[!is.na(data$eqi_score),]
 
 #data[,"year"]
@@ -121,5 +122,35 @@ mcor<-cor(matrixcorr)
 
 #matrice des correlations
 corrplot(mcor,type='upper', title = "Matrice des corrélations", mar=c(0,0,1,0))
+```
+
+
+```{r}
+#transformation en donnees de panels
+data_p <- pdata.frame(data, index = c("region", "annee"), drop.index = TRUE, row.names = TRUE)
+pdim(data_p, 25)
+head(data_p)
+```
+
+
+```{r}
+## decomposition de la variance 
+
+###EQI
+vartot_EQI <- sum((data_p$EQI_norm - mean(data_p$EQI_norm))^2)
+vartot_EQI ##variabilité totale
+
+var_withinEQI <- sum(Within(data_p$EQI_norm)^2)
+var_withinEQI #variabilité within
+var_withinEQI / vartot_EQI 
+#variance intra = 10% de la variance totale
+
+var_betweenEQI <- sum((Between(data_p$EQI_norm)-mean(data_p$EQI_norm))^2)
+var_betweenEQI
+var_betweenEQI / vartot_EQI
+#variance inter = 90% de la variance totale
+
+#peu de variabilité dans le temps pour une même région
+#beaucoup de variabilité entre les régions pour une même année
 ```
 
