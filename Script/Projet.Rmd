@@ -5,6 +5,12 @@ date: "Février 2023"
 output: html_document
 ---
 
+
+https://docplayer.fr/12368918-Econometrie-des-donnees-de-panel-avec-r.html
+
+Faire stats des avec variable endogène et 2 ou 3 variables explicatives
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -195,6 +201,8 @@ corrplot(mcor,type='upper', title = "Matrice des corrélations", mar=c(0,0,1,0))
 data_p <- pdata.frame(data, index = c("region", "annee"), drop.index = TRUE, row.names = TRUE)
 pdim(data_p, 25)
 head(data_p)
+
+pdim(data_p)
 ```
 
 
@@ -226,20 +234,31 @@ Estimation modèles
 
 ```{r}
 #pooled
-reg_pooled1 = lm(EQI_norm ~ . - region - annee ,  data=data)
+reg_pooled1 = lm(EQI_norm ~ . ,  data=data_p)
 summary(reg_pooled1)
 ```
 
 
 ```{r}
 #modele heterogène
+data$annee <- as.factor(data$annee)
+
 reg_heter <- lm(EQI_norm ~ annee + pop:annee + surface:annee + revenu:annee + emploi:annee +
-                  hotel:annee + meurtre:annee + education:annee - 1, data = data)
+                  hotel:annee + meurtre:annee + education:annee - 1, data = data_p)
 
 summary(reg_heter)
 
-gr_MCO <- systemfit(EQI_norm ~ . - region - annee, method="OLS", data=data)
+gr_MCO <- systemfit(EQI_norm ~ ., method="OLS", data=data_p)
 summary(gr_MCO, residCov = FALSE, equations= FALSE)
 summary(gr_MCO) #presentation differente
+```
+
+
+```{r}
+#test anova
+
+anova(reg_pooled1,reg_heter)
+#rejet de H0, on retient le modèle non contraint, avec l'annee
+
 ```
 
