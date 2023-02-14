@@ -20,6 +20,7 @@ library(corrplot)
 library(plm)
 library(ggplot2)
 library(systemfit)
+library(rAmCharts)
 
 ```
 
@@ -119,7 +120,7 @@ plot(data_ind, main = "EQI normalisé par année et par région")
 ```
 
 ```{r}
-boxplot(data$EQI_norm,las=1, names = c("EQI normalisé"), col = c( "red"), main = "Distribution de l'EQI normalisé")
+amBoxplot(EQI_norm~annee, data=data)
 ```
 
 ```{r}
