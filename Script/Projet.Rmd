@@ -12,6 +12,7 @@ library(dplyr)
 library(nlme)
 library(corrplot)
 library(plm)
+
 ```
 
 
@@ -19,7 +20,7 @@ library(plm)
 
 getwd()
 
-#data <- read.table("./Data/qog_eureg_long_nov20.csv", sep = ",", header = TRUE)
+data <- read.table("../Data/qog_eureg_long_nov20.csv", sep = ",", header = TRUE, encoding = 'UTF-8')
 data <- data[!is.na(data$eqi_score),]
 
 #data[,"year"]
@@ -39,7 +40,7 @@ data <- data[!is.na(data$eqi_score),]
 #selection des variables
 #variable à expliquer : eqi_norm
 data <- data[,c("cname", "region_name", "year", "eqi_norm_eqi", "eu_d2jan_t", "eu_d3area_t", "eu_b5n_eur_hab","eu_empl_edltotal",
-                "eu_hea_mdoc", "eqi_norm_corrupt", "eu_tour_nshotel", "eu_rac_kil")]
+                "eu_hea_mdoc", "eu_tour_nshotel", "eu_rac_kil", "eu_eduleave_t")]
 
 nrow(data)
 
@@ -52,7 +53,7 @@ data <- data %>% left_join(df,
            by=c('region_name'))
 
 data <- data %>% select(region_name,year.x,eqi_norm_eqi,eu_d2jan_t,eu_d3area_t.y,eu_b5n_eur_hab,
-                        eu_empl_edltotal,eu_hea_mdoc,eqi_norm_corrupt,eu_tour_nshotel,eu_rac_kil)
+                        eu_empl_edltotal,eu_hea_mdoc,eu_tour_nshotel,eu_rac_kil, eu_eduleave_t)
 
 summary(data)
 
@@ -86,8 +87,8 @@ table(data$year)
 
 summary(data)
 
-colnames(data) <- c("region", "annee", "EQI_norm", "pop", "surface", "revenu", "emploi", "corr_norm",
-                    "hotel", "meurtre")
+colnames(data) <- c("region", "annee", "EQI_norm", "pop", "surface", "revenu", "emploi",
+                    "hotel", "meurtre", "education")
 
 ```
 
@@ -99,7 +100,7 @@ colnames(data) <- c("region", "annee", "EQI_norm", "pop", "surface", "revenu", "
 </br>
 
 ```{r}
-#on a 151 regions avec 3 observations par région
+#on a 148 regions avec 3 observations par région
 
 plot(data$annee,data$EQI_norm,xlab = "Année",ylab = "EQI normalisé", main = "EQI normalisé par année")
 ```
@@ -123,6 +124,14 @@ mcor<-cor(matrixcorr)
 #matrice des correlations
 corrplot(mcor,type='upper', title = "Matrice des corrélations", mar=c(0,0,1,0))
 ```
+
+revenu en prix constant ?
+indicateur sur l'éducation
+enlever la corruption
+
+faire une carte pour visualiser l'EQI pour une année donnée
+
+faire une MCO pour commencer
 
 
 ```{r}
@@ -152,5 +161,16 @@ var_betweenEQI / vartot_EQI
 
 #peu de variabilité dans le temps pour une même région
 #beaucoup de variabilité entre les régions pour une même année
+```
+
+
+
+
+Estimation modèles
+
+```{r}
+#pooled
+reg_pooled1 = lm(EQI_norm ~ . - region - annee ,  data=data)
+summary(reg_pooled1)
 ```
 
