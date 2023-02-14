@@ -243,8 +243,7 @@ summary(reg_pooled1)
 #modele heterogène
 data$annee <- as.factor(data$annee)
 
-reg_heter <- lm(EQI_norm ~ annee + pop:annee + surface:annee + revenu:annee + emploi:annee +
-                  hotel:annee + meurtre:annee + education:annee - 1, data = data_p)
+reg_heter <- lm(EQI_norm ~ annee + pop:annee + surface:annee + revenu:annee + emploi:annee + meurtre:annee + education:annee - 1, data = data_p)
 
 summary(reg_heter)
 
