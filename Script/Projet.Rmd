@@ -25,19 +25,18 @@ getwd()
 data <- read.table("../Data/qog_eureg_long_nov20.csv", sep = ",", header = TRUE, encoding = 'UTF-8')
 data <- data[!is.na(data$eqi_score),]
 
-#data[,"year"]
-#data[,"region_name"]
-#data[,"eu_d2jan_t"] #pop
-#data[,"eu_d3area_lat"] #surface
-#data[,"eu_d3area_t"] #surface
-#data[,"eqi_score"] #EQI
-#data[,"eqi_norm_eqi"] #EQI normalisé
-#data[,"eu_b5n_eur_hab"] #revenu par habitant
-#data[,"eu_empl_edltotal"] #taux d'emploi
-#data[,"eu_hea_mdoc"] #medecin par milleir d'habtiants
-#data[,"eqi_norm_corrupt"] #corruption normalisé
-#data[,"eu_tour_nshotel"] #nuits passees dans hotel ou autre
-#data[,"eu_rac_kil"] #victimes accidents de la route
+# explication des variables : 
+# year
+# region_name
+# eu_d2jan_t : Total population
+# eu_d3area_t : Total surface area of a region as square kilometer
+# eqi_norm_eqi : EQI index, min-max (0-100) standardized
+# eu_b5n_eur_hab : Income of households (balance), constant Euro per inhabitant
+# eu_empl_edltotal : Total employment rate for people between 15 and 34 years for all education levels (%)
+# eqi_norm_corrupt : Corruption pillar, country centered and min-max (0-100) standardized
+# eu_tour_nshotel : Number of nights spent at hotels and similar accommodations
+# eu_rac_kil : Killed victims in road accidents, per million inhabitants
+# eu_eduleave_t : Early leavers from education and training as a percentage of the population aged 18-24 with at most lower secondary education
 
 #selection des variables
 #variable à expliquer : eqi_norm
