@@ -12,6 +12,8 @@ library(dplyr)
 library(nlme)
 library(corrplot)
 library(plm)
+library(ggplot2)
+library(systemfit)
 
 ```
 
@@ -115,6 +117,69 @@ plot(data_ind, main = "EQI normalisé par année et par région")
 boxplot(data$EQI_norm,las=1, names = c("EQI normalisé"), col = c( "red"), main = "Distribution de l'EQI normalisé")
 ```
 
+```{r}
+ggplot(data) + aes(x= EQI_norm, y = ..density..) + 
+  geom_histogram(bins = 30, fill = "red", color = "black") +
+  geom_density() +
+  ggtitle("Distribution de l'EQI normalisé") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("EQI normalisé") + 
+  ylab("Densité")
+```
+
+
+```{r}
+ggplot(data) + aes(x= pop, y = ..density..) + 
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  geom_density() +
+  ggtitle("Distribution de la population") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Population") + 
+  ylab("Densité")
+```
+
+```{r}
+ggplot(data) + aes(x= revenu, y = ..density..) + 
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  geom_density() +
+  ggtitle("Distribution du revenu") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Revenu") + 
+  ylab("Densité")
+```
+
+```{r}
+ggplot(data) + aes(x= emploi, y = ..density..) + 
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  geom_density() +
+  ggtitle("Distribution du taux d'emploi") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Taux d'emploi") + 
+  ylab("Densité")
+```
+
+```{r}
+ggplot(data) + aes(x= meurtre, y = ..density..) + 
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  geom_density() +
+  ggtitle("Distribution du nombre de meurtre") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("Nombre de meurtres") + 
+  ylab("Densité")
+```
+
+
+```{r}
+ggplot(data) + aes(x= education, y = ..density..) + 
+  geom_histogram(bins = 30, fill = "lightblue", color = "black") +
+  geom_density() +
+  ggtitle("Distribution") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("") + 
+  ylab("Densité")
+```
+
+
 
 
 ```{r}
@@ -124,14 +189,6 @@ mcor<-cor(matrixcorr)
 #matrice des correlations
 corrplot(mcor,type='upper', title = "Matrice des corrélations", mar=c(0,0,1,0))
 ```
-
-revenu en prix constant ?
-indicateur sur l'éducation
-enlever la corruption
-
-faire une carte pour visualiser l'EQI pour une année donnée
-
-faire une MCO pour commencer
 
 
 ```{r}
@@ -172,5 +229,18 @@ Estimation modèles
 #pooled
 reg_pooled1 = lm(EQI_norm ~ . - region - annee ,  data=data)
 summary(reg_pooled1)
+```
+
+
+```{r}
+#modele heterogène
+reg_heter <- lm(EQI_norm ~ annee + pop:annee + surface:annee + revenu:annee + emploi:annee +
+                  hotel:annee + meurtre:annee + education:annee - 1, data = data)
+
+summary(reg_heter)
+
+gr_MCO <- systemfit(EQI_norm ~ . - region - annee, method="OLS", data=data)
+summary(gr_MCO, residCov = FALSE, equations= FALSE)
+summary(gr_MCO) #presentation differente
 ```
 
