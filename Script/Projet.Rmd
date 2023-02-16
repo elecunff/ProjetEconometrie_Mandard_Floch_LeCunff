@@ -235,10 +235,17 @@ Estimation modèles
 
 ```{r}
 #pooled
-form <- EQI_norm ~  annee + pop + surface + revenu + emploi + meurtre + education
-reg_pooled1 = lm(form ,  data=data_p)
+form_pooled <- EQI_norm ~  pop + surface + revenu + emploi + meurtre + education
+reg_pooled1 = lm(form_pooled ,  data=data_p)
 summary(reg_pooled1)
 ```
+```{r}
+scr_pooled = sum(reg_pooled1$residuals^2)
+scr_pooled
+ddl_pooled = reg_pooled1$df.residual
+ddl_pooled
+```
+
 
 
 ```{r}
@@ -253,33 +260,87 @@ gr_MCO <- systemfit(EQI_norm ~ ., method="OLS", data=data_p)
 summary(gr_MCO, residCov = FALSE, equations= FALSE)
 summary(gr_MCO) #presentation differente
 ```
+```{r}
+scr_heter = sum(reg_heter$residuals^2)
+scr_heter 
+
+ddl_heter = reg_heter$df.residual
+ddl_heter 
+```
 
 
 ```{r}
 #test anova
 
 anova(reg_pooled1,reg_heter)
-#non rejet de H0, on retient le modèle contraint, sans l'annee
-# on conserve le pooled
+# rejet de H0, on retient le modèle non contraint, avec l'annee
+#on retient le modele avec des annees heterogenes
 
-pooltest(form, data = data_p, effect = "time", model = "pooling") # avec plm
-#on accepte H0 : les annees ont le meme coefficient de pente
+pooltest(form_pooled, data = data_p, effect = "time", model = "pooling") # avec plm
+#on rejette H0 : les annees n'ont pas le meme coefficient de pente
 ```
 
 
 ```{r}
-##### Modèles avec effets fixes 
- ###estimation within
+## Modèles avec effets fixes temporels
+# estimation within
+formT = EQI_norm ~ annee +pop + surface + revenu + emploi + meurtre + education
+reg_withinT = plm(formT ,  effect="time", model="within", data=data_p)
 
-reg_within = plm(form ,  effect="time", model="within", data=data_p)
+summary(reg_withinT)
+summary(fixef(reg_withinT))
 
-summary(reg_within)
-summary(fixef(reg_within))
+scr_withinT = sum(reg_withinT$residuals^2)
+scr_withinT 
 
-scr_within = sum(reg_within$residuals^2)
-scr_within #meme scr que LSDV, R2 different
-
-ddl_within = reg_within$df.residual
-ddl_within #meme ddl
+ddl_withinT = reg_withinT$df.residual
+ddl_withinT 
 ```
+```{r}
+#test entre pooled et withinT
+F_PP2W = ((scr_pooled-scr_withinT)/(ddl_pooled-ddl_withinT))/(scr_withinT/ddl_withinT)
+F_PP2W
+
+pvalue_PP2W = pf(F_PP2W,ddl_pooled-ddl_withinT,ddl_withinT,lower.tail=FALSE)
+pvalue_PP2W
+#on rejette H0
+# on retient le modele a effets fixes temporels
+
+```
+```{r}
+#test entre withinT et heterogene
+F_PP3W = ((scr_withinT-scr_heter)/(ddl_withinT-ddl_heter))/(scr_heter/ddl_heter)
+F_PP3W
+
+pvalue_PP3W = pf(F_PP3W,ddl_withinT-ddl_heter,ddl_heter,lower.tail=FALSE)
+pvalue_PP3W
+#on accepte H0
+# on retient le modele a effets fixes temporels
+```
+
+
+```{r}
+###estimation du systeme d'?quations compose de 4 pays 
+sub_data_p <- subset(data_p, region %in% c("Lombardia", "Toscana", "Emilia-Romagna", "Calabria"))
+
+##methode SURE avec variance specifique ? chaque i et covariance differente de 0 = systemfit
+gr_SUR <- systemfit(Homicide~ Police+RatioJ_V+alcool_litre+logPIB_PC + u+ Pop_Ur, method="SUR", data=sub_data_p)
+##SUR iteratif option maxit=100 ici trop peu d'observations temporelles
+summary(gr_SUR)
+
+##methode MCO, suppose que covariance = 0 et variance speficique ? chaque i
+gr_MCO <- systemfit(Homicide~ Police+RatioJ_V+alcool_litre+logPIB_PC + u+ Pop_Ur, method="OLS", data=sub_data_p)
+summary(gr_MCO)
+
+###avec plm , on suppose que variance identique et cov =0, coefficients les memes que gr_MCO mais std error different
+reg_subpays = plm(Homicide~Pays + Police:Pays+RatioJ_V:Pays+alcool_litre:Pays+logPIB_PC:Pays + u:Pays+ Pop_Ur:Pays -1 , model = "pooling", data=sub_data_p)
+coeftest(reg_subpays,vcovHC,type="HC3")
+summary(reg_subpays)
+###test d'independance 
+pcdtest(reg_subpays) #pas le meme que dans stata, impose variance identique
+
+```
+
+
+
 
