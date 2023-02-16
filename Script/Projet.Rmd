@@ -199,7 +199,7 @@ corrplot(mcor,type='upper', title = "Matrice des corrélations", mar=c(0,0,1,0))
 
 ```{r}
 #transformation en donnees de panels
-data_p <- pdata.frame(data, index = c("region", "annee"), drop.index = TRUE, row.names = TRUE)
+data_p <- pdata.frame(data, index = c("region", "annee"), drop.index = FALSE, row.names = TRUE)
 pdim(data_p, 25)
 head(data_p)
 
@@ -235,7 +235,8 @@ Estimation modèles
 
 ```{r}
 #pooled
-reg_pooled1 = lm(EQI_norm ~ . ,  data=data_p)
+form <- EQI_norm ~  annee + pop + surface + revenu + emploi + meurtre + education
+reg_pooled1 = lm(form ,  data=data_p)
 summary(reg_pooled1)
 ```
 
@@ -258,7 +259,25 @@ summary(gr_MCO) #presentation differente
 #test anova
 
 anova(reg_pooled1,reg_heter)
-#rejet de H0, on retient le modèle non contraint, avec l'annee
+#non rejet de H0, on retient le modèle contraint, sans l'annee
+# on conserve le pooled
 
+pooltest(form, data = data_p, effect = "time", model = "pooling") # avec plm
+#on accepte H0 : les annees ont le meme coefficient de pente
+```
+
+
+```{r}
+##### Modèles avec effets fixes 
+ ###estimation within
+
+reg_within = plm(form ,  effect="time", model="within", data=data_p)
+
+summary(reg_within)
+summary(fixef(reg_within))
+scr_within = sum(reg_within$residuals^2)
+scr_within #meme scr que LSDV, R2 different
+ddl_within = reg_within$df.residual
+ddl_within #meme ddl
 ```
 
