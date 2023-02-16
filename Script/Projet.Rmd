@@ -194,6 +194,8 @@ mcor<-cor(matrixcorr)
 
 #matrice des correlations
 corrplot(mcor,type='upper', title = "Matrice des corrélations", mar=c(0,0,1,0))
+
+#on ne prendras pas en compte la varible hotel car tres correlee avec la population
 ```
 
 
@@ -244,13 +246,40 @@ summary(reg_pooled1)
 #modele heterogène
 data$annee <- as.factor(data$annee)
 
-reg_heter <- lm(EQI_norm ~ annee + pop:annee + surface:annee + revenu:annee + emploi:annee + meurtre:annee + education:annee - 1, data = data_p)
+reg_heter <- lm(EQI_norm ~ pop:annee + surface:annee + revenu:annee + emploi:annee + meurtre:annee + education:annee - 1, data = data)
 
 summary(reg_heter)
 
-gr_MCO <- systemfit(EQI_norm ~ ., method="OLS", data=data_p)
-summary(gr_MCO, residCov = FALSE, equations= FALSE)
-summary(gr_MCO) #presentation differente
+
+#methode Zellner ou SURE
+#regarder covariance
+
+
+
+
+
+
+
+
+#si T petit,
+
+#modele a effets fixes indiviuels
+#exemple surface du pays : n'evolue pas dans le temps, coefficient ne bouge pas -> inclut dans la constante
+
+#dans notre cas pas besoin d'estimer un coefficient associe a la surface pour chaque annee
+
+#il faut creer N variables indicatrices
+#= 1 si correspond a l'individu et 0 sinon
+
+#s'estime par MCO si les residus sont homoscedastiques et non autocorreles
+#= Least Squar Dummy Variable
+
+#si N grand -> estimateur within : MCO sur donnees centrees
+ 
+
+#modele a effets individuels aleatoires
+
+
 ```
 
 
