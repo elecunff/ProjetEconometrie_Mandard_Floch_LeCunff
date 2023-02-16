@@ -275,8 +275,10 @@ reg_within = plm(form ,  effect="time", model="within", data=data_p)
 
 summary(reg_within)
 summary(fixef(reg_within))
+
 scr_within = sum(reg_within$residuals^2)
 scr_within #meme scr que LSDV, R2 different
+
 ddl_within = reg_within$df.residual
 ddl_within #meme ddl
 ```
