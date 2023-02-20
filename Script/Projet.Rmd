@@ -5,15 +5,13 @@ date: "Février 2023"
 output: html_document
 ---
 
-
-https://docplayer.fr/12368918-Econometrie-des-donnees-de-panel-avec-r.html
-
 Faire stats des avec variable endogène et 2 ou 3 variables explicatives
 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+#importation des packages
 library(dplyr)
 library(nlme)
 library(corrplot)
@@ -21,18 +19,18 @@ library(plm)
 library(ggplot2)
 library(systemfit)
 library(rAmCharts)
-
 ```
 
 
 ```{r, include = FALSE}
-
 getwd()
 
+#importation des donnees
 data <- read.table("../Data/qog_eureg_long_nov20.csv", sep = ",", header = TRUE, encoding = 'UTF-8')
-data <- data[!is.na(data$eqi_score),]
+data <- data[!is.na(data$eqi_score),] #suppression des lignes ou on n'a pas d'EQI
 
-# explication des variables : 
+#explication des variables selectionnees : 
+
 # year
 # region_name
 # eu_d2jan_t : Total population
@@ -45,6 +43,7 @@ data <- data[!is.na(data$eqi_score),]
 # eu_rac_kil : Killed victims in road accidents, per million inhabitants
 # eu_eduleave_t : Early leavers from education and training as a percentage of the population aged 18-24 with at most lower secondary education
 
+
 #selection des variables
 #variable à expliquer : eqi_norm
 data <- data[,c("cname", "region_name", "year", "eqi_norm_eqi", "eu_d2jan_t", "eu_d3area_t", "eu_b5n_eur_hab","eu_empl_edltotal",
@@ -52,64 +51,53 @@ data <- data[,c("cname", "region_name", "year", "eqi_norm_eqi", "eu_d2jan_t", "e
 
 nrow(data)
 
+
+#on n'a pas de donnees pour la surface en 2017 donc on reprend les donnees
+#des annees precedentes car la surface ne varie pas
+
 #mise a jour de la surface pour avoir des donnees en 2017
 df <- data[,c("region_name", "year", "eu_d3area_t")]
 df <- df %>% filter(year == 2013)
 df["year"] <- 2017
-
 data <- data %>% left_join(df, 
            by=c('region_name'))
-
 data <- data %>% select(region_name,year.x,eqi_norm_eqi,eu_d2jan_t,eu_d3area_t.y,eu_b5n_eur_hab,
                         eu_empl_edltotal,eu_hea_mdoc,eu_tour_nshotel,eu_rac_kil, eu_eduleave_t)
 
 summary(data)
-
 sum(is.na(data$eu_d3area_t.y))
 
 #suppression des valeurs manquantes pour la surface
 #suppression de la variable docteurs car trop de NA (106)
 data <- data %>% filter(!is.na(data$eu_d3area_t.y)) %>%
                 select(-eu_hea_mdoc)
-
 table(data$year)
 
 #remplacement des NA pour taux d'emploi et tourisme par leur mediane
 data[is.na(data$eu_empl_edltotal),7] <- median(data$eu_empl_edltotal, na.rm = T)
 data[is.na(data$eu_tour_nshotel),9] <- median(data$eu_tour_nshotel, na.rm = T)
-
 summary(data)
 
 #suppression des NA pour revenu par habitant, corruption et nombre de morts
 data <- na.omit(data)
-
 table <- data.frame(table(data$region_name))
-
 reg_sup <- table[table$Freq != 3,1]
 reg_sup
 
 #suppression des regions pour lesquelles on n'a pas d'observations sur les 3 années
 data <- data[!(data$region_name %in% reg_sup),]
-
 table(data$year)
-
 summary(data)
-
 colnames(data) <- c("region", "annee", "EQI_norm", "pop", "surface", "revenu", "emploi",
-                    "hotel", "meurtre", "education")
-
+                    "hotel", "accident", "education")
 ```
 
-# **Introduction**
-</br>
 
 
-# **1) Statistiques descriptives**
-</br>
+Statistiques descriptives
 
 ```{r}
 #on a 148 regions avec 3 observations par région
-
 plot(data$annee,data$EQI_norm,xlab = "Année",ylab = "EQI normalisé", main = "EQI normalisé par année")
 ```
 
@@ -120,6 +108,7 @@ plot(data_ind, main = "EQI normalisé par année et par région")
 ```
 
 ```{r}
+#boxplot avec la distribution de l'EQI par annee
 amBoxplot(EQI_norm~annee, data=data)
 ```
 
@@ -165,10 +154,10 @@ ggplot(data) + aes(x= emploi, y = ..density..) +
 ```
 
 ```{r}
-ggplot(data) + aes(x= meurtre, y = ..density..) + 
+ggplot(data) + aes(x= accident, y = ..density..) + 
   geom_histogram(bins = 30, fill = "lightblue", color = "black") +
   geom_density() +
-  ggtitle("Distribution du nombre de meurtre") +
+  ggtitle("Distribution du nombre de victimes d'accident de la route") +
   theme(plot.title = element_text(hjust = 0.5)) +
   xlab("Nombre de meurtres") + 
   ylab("Densité")
@@ -189,23 +178,25 @@ ggplot(data) + aes(x= education, y = ..density..) +
 
 
 ```{r}
+#matrice des correlations
 matrixcorr<- data[,-c(1,2)]
 mcor<-cor(matrixcorr)
+mcor
 
-#matrice des correlations
 corrplot(mcor,type='upper', title = "Matrice des corrélations", mar=c(0,0,1,0))
+#correlation importante entre EQI et revenu, EQI et emploi
+#population et nombre d'hotels
+#population et surface
 
-#on ne prendras pas en compte la varible hotel car tres correlee avec la population
+#la variable hotel etant tre correlee avec la population, nous decidons de ne pas l'inclure dans nos modeles
 ```
 
 
 ```{r}
 #transformation en donnees de panels
-data_p <- pdata.frame(data, index = c("region", "annee"), drop.index = TRUE, row.names = TRUE)
+data_p <- pdata.frame(data, index = c("region", "annee"), drop.index = FALSE, row.names = TRUE)
 pdim(data_p, 25)
 head(data_p)
-
-pdim(data_p)
 ```
 
 
@@ -213,81 +204,166 @@ pdim(data_p)
 ## decomposition de la variance 
 
 ###EQI
+print("EQI normalisé")
 vartot_EQI <- sum((data_p$EQI_norm - mean(data_p$EQI_norm))^2)
 vartot_EQI ##variabilité totale
-
 var_withinEQI <- sum(Within(data_p$EQI_norm)^2)
 var_withinEQI #variabilité within
 var_withinEQI / vartot_EQI 
 #variance intra = 10% de la variance totale
-
 var_betweenEQI <- sum((Between(data_p$EQI_norm)-mean(data_p$EQI_norm))^2)
 var_betweenEQI
 var_betweenEQI / vartot_EQI
 #variance inter = 90% de la variance totale
 
-#peu de variabilité dans le temps pour une même région
-#beaucoup de variabilité entre les régions pour une même année
+#peu de variabilité de l'EQI dans le temps pour une même région
+#beaucoup de variabilité de l'EQI entre les régions pour une même année
+
+
+###population
+print("population")
+vartot_pop <- sum((data_p$pop - mean(data_p$pop))^2)
+vartot_pop ##variabilité totale
+var_withinpop <- sum(Within(data_p$pop)^2)
+var_withinpop #variabilité within
+var_withinpop / vartot_pop 
+#variance intra = 0.1% de la variance totale
+var_betweenpop <- sum((Between(data_p$pop)-mean(data_p$pop))^2)
+var_betweenpop
+var_betweenpop / vartot_pop
+#variance inter = 99.9% de la variance totale
+
+#presqu'aucune variabilité de la population dans le temps pour une même région
+#beaucoup de variabilité de la population entre les régions pour une même année
+
+
+###revenu
+print("revenu")
+vartot_revenu <- sum((data_p$revenu - mean(data_p$revenu))^2)
+vartot_revenu ##variabilité totale
+var_withinrevenu <- sum(Within(data_p$revenu)^2)
+var_withinrevenu #variabilité within
+var_withinrevenu / vartot_revenu 
+#variance intra = 2.2% de la variance totale
+var_betweenrevenu <- sum((Between(data_p$revenu)-mean(data_p$revenu))^2)
+var_betweenrevenu
+var_betweenrevenu / vartot_revenu
+#variance inter = 97.8% de la variance totale
+
+#peu de variabilité du revenu dans le temps pour une même région
+#beaucoup de variabilité du revenu entre les régions pour une même année
+
+
+###emploi
+print("emploi")
+vartot_emploi <- sum((data_p$emploi - mean(data_p$emploi))^2)
+vartot_emploi ##variabilité totale
+var_withinemploi <- sum(Within(data_p$emploi)^2)
+var_withinemploi #variabilité within
+var_withinemploi / vartot_emploi 
+#variance intra = 10% de la variance totale
+var_betweenemploi <- sum((Between(data_p$emploi)-mean(data_p$emploi))^2)
+var_betweenemploi
+var_betweenemploi / vartot_emploi
+#variance inter = 90% de la variance totale
+
+#peu de variabilité de l'emploi dans le temps pour une même région
+#beaucoup de variabilité de l'emploi entre les régions pour une même année
+
+
+#la population, le revenu et le taux d'emploi ont tous une variabilite similaire a l'EQI,
+#c'est-a-dire une variabilite intra tres faible et une variabilite inter tres importante
 ```
-
-
-
 
 Estimation modèles
 
 ```{r}
-#pooled
-reg_pooled1 = lm(EQI_norm ~ . ,  data=data_p)
+#modele pooled
+form_pooled <- EQI_norm ~  pop + surface + revenu + emploi + accident + education
+reg_pooled1 <- lm(form_pooled ,  data=data_p)
 summary(reg_pooled1)
+#R2 ajusté = 66%
+#toutes les variables significatives a 5%
+
+#somme des carres des residus et degres de liberte
+scr_pooled <- sum(reg_pooled1$residuals^2)
+scr_pooled
+ddl_pooled <- reg_pooled1$df.residual
+ddl_pooled
 ```
 
 
 ```{r}
-#modele heterogène
+#modele heterogène (un coefficient pour chaque annee et variable)
+
+#transformation de l'annee en facteur
 data$annee <- as.factor(data$annee)
 
-reg_heter <- lm(EQI_norm ~ pop:annee + surface:annee + revenu:annee + emploi:annee + meurtre:annee + education:annee - 1, data = data)
-
+reg_heter <- lm(EQI_norm ~ annee + pop:annee + surface:annee + revenu:annee + emploi:annee + accident:annee + education:annee - 1, data = data_p)
 summary(reg_heter)
+#R2 ajusté  = 96%
 
-
-#methode Zellner ou SURE
-#regarder covariance
-
-
-
-
-
-
-
-
-#si T petit,
-
-#modele a effets fixes indiviuels
-#exemple surface du pays : n'evolue pas dans le temps, coefficient ne bouge pas -> inclut dans la constante
-
-#dans notre cas pas besoin d'estimer un coefficient associe a la surface pour chaque annee
-
-#il faut creer N variables indicatrices
-#= 1 si correspond a l'individu et 0 sinon
-
-#s'estime par MCO si les residus sont homoscedastiques et non autocorreles
-#= Least Squar Dummy Variable
-
-#si N grand -> estimateur within : MCO sur donnees centrees
- 
-
-#modele a effets individuels aleatoires
-
-
+scr_heter <- sum(reg_heter$residuals^2)
+scr_heter 
+ddl_heter <- reg_heter$df.residual
+ddl_heter 
 ```
 
 
 ```{r}
-#test anova
-
+#test anova entre le modele pooled et le modele heterogene
 anova(reg_pooled1,reg_heter)
-#rejet de H0, on retient le modèle non contraint, avec l'annee
+pooltest(form_pooled, data = data_p, effect = "time", model = "pooling")
+#p-value < 5% : rejet de H0, on retient le modèle heterogene
 
+#on rejette H0 : les annees ont des intercept differentes et/ou des pentes differentes
+```
+
+
+```{r}
+## Modèles avec effets fixes temporels
+# estimation within
+
+formT <- EQI_norm ~ pop + surface + revenu + emploi + accident + education
+
+reg_withinT <- plm(formT ,  effect="time", model="within", data=data_p)
+summary(reg_withinT)
+#R2 ajusté = 74%
+summary(fixef(reg_withinT))
+#tous les coefficients significatifs
+
+scr_withinT <- sum(reg_withinT$residuals^2)
+scr_withinT 
+ddl_withinT <- reg_withinT$df.residual
+ddl_withinT 
+```
+
+```{r}
+#test entre withinT et heterogene
+F_PP3W <- ((scr_withinT-scr_heter)/(ddl_withinT-ddl_heter))/(scr_heter/ddl_heter)
+F_PP3W
+pvalue_PP3W <- pf(F_PP3W,ddl_withinT-ddl_heter,ddl_heter,lower.tail=FALSE)
+pvalue_PP3W
+#p-value > 5%, on accepte H0
+#on retient le modele a effets fixes temporels
+#les pentes sont identiques
+```
+
+
+```{r}
+#test entre pooled et withinT
+F_PP2W <- ((scr_pooled-scr_withinT)/(ddl_pooled-ddl_withinT))/(scr_withinT/ddl_withinT)
+F_PP2W
+pvalue_PP2W <- pf(F_PP2W,ddl_pooled-ddl_withinT,ddl_withinT,lower.tail=FALSE)
+pvalue_PP2W
+#on rejette H0, les constantes sont differentes
+#on retient le modele a effets fixes temporels
+```
+
+
+```{r}
+#interpretation du modele retenu
+summary(reg_withinT)
+summary(fixef(reg_withinT))
 ```
 
