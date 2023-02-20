@@ -5,9 +5,6 @@ date: "Février 2023"
 output: html_document
 ---
 
-Faire stats des avec variable endogène et 2 ou 3 variables explicatives
-
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -293,6 +290,7 @@ ddl_pooled
 ```
 
 
+
 ```{r}
 #modele heterogène (un coefficient pour chaque annee et variable)
 
@@ -366,4 +364,3 @@ pvalue_PP2W
 summary(reg_withinT)
 summary(fixef(reg_withinT))
 ```
-
