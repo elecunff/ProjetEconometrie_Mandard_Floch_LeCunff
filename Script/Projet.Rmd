@@ -35,7 +35,6 @@ data <- data[!is.na(data$eqi_score),] #suppression des lignes ou on n'a pas d'EQ
 # eqi_norm_eqi : EQI index, min-max (0-100) standardized
 # eu_b5n_eur_hab : Income of households (balance), constant Euro per inhabitant
 # eu_empl_edltotal : Total employment rate for people between 15 and 34 years for all education levels (%)
-# eqi_norm_corrupt : Corruption pillar, country centered and min-max (0-100) standardized
 # eu_tour_nshotel : Number of nights spent at hotels and similar accommodations
 # eu_rac_kil : Killed victims in road accidents, per million inhabitants
 # eu_eduleave_t : Early leavers from education and training as a percentage of the population aged 18-24 with at most lower secondary education
@@ -119,7 +118,6 @@ ggplot(data) + aes(x= EQI_norm, y = ..density..) +
   ylab("Densité")
 ```
 
-
 ```{r}
 ggplot(data) + aes(x= pop, y = ..density..) + 
   geom_histogram(bins = 30, fill = "lightblue", color = "black") +
@@ -172,14 +170,10 @@ ggplot(data) + aes(x= education, y = ..density..) +
 ```
 
 
-
-
 ```{r}
 #matrice des correlations
 matrixcorr<- data[,-c(1,2)]
 mcor<-cor(matrixcorr)
-mcor
-
 corrplot(mcor,type='upper', title = "Matrice des corrélations", mar=c(0,0,1,0))
 #correlation importante entre EQI et revenu, EQI et emploi
 #population et nombre d'hotels
@@ -363,4 +357,18 @@ pvalue_PP2W
 #interpretation du modele retenu
 summary(reg_withinT)
 summary(fixef(reg_withinT))
+
+#plus l'EQI est proche de 100, plus la gouvernance est meilleur
+
+#en 2013, une region avec des caracteristiques similaires a celles de 2010 aura un EQI normalise inferieur de 10 points
+#en 2017, une region avec des caracteristiques similaires a celles de 2013 aura un EQI normalise inferieur de 8 points
+#en 2017, une region avec des caracteristiques similaires a celles de 2010 aura un EQI normalise inferieur de 18 points
+
+#une hausse de la population de un million d'habitants va entrainer une baisse de l'EQI normalise de 0.41 point
+#une hausse de la surface de 10 000 km2 va entrainer une hausse de l'EQI normalise de 0.45 point
+#une hausse des revenus des menages de 1000 euros va entrainer une hausse de l'EQI normalisé de 1.36 point
+#une hausse du taux d'emploi des 15-34 ans de 1 point de % va entrainer une hausse de l'EQI normalisé de 0.87 point
+#une hausse du nombre de victimes d'accidents de la route de 10 unites va entrainer une baisse de l'EQI normalisé de 1.73 point
+#une hausse du taux de jeunes n'ayant pas fait d'etudes superieures de 1 point de % va entrainer une hausse de l'EQI normalisé de 0.24 point
+
 ```
